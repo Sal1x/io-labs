@@ -35,7 +35,7 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
 {
 	printk(KERN_NOTICE "proc: read()");
 
-	char* local_buf = (char*) kmalloc(sizeof(char) * max_size, GFP_KERNEL);
+	char* local_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
 
 	size_t len = 0;
 	size_t i = 0;
