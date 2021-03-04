@@ -25,6 +25,8 @@ static int sum = 0;
 static int sum_count = 0;
 static int MAX_SIZE = 1024;
 
+static int* history;
+
 static ssize_t proc_write(struct file* file, const char __user* ubuf, size_t count, loff_t* ppos)
 {
 	printk(KERN_NOTICE "proc: write()\n");
