@@ -100,6 +100,8 @@ static ssize_t dev_write(struct file *file, const char __user* ubuf, size_t coun
 
 	} //for
 
+
+
 	history[sum_count++] = sum;
 
 	printk(KERN_NOTICE "dev: sum = %d\n", sum);
@@ -172,6 +174,8 @@ static char* set_devnode(struct device* dev, umode_t* mode)
 }
 
 static int __init lab1_init(void) {
+	history = (int*) kmalloc(sizeof(int) * MAX_SIZE, GFP_KERNEL);
+
 	entry = proc_create("var3", 0444, NULL, &fops);
 
 	if (alloc_chrdev_region(&first, 0, 1, "ch_dev") < 0)
