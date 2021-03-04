@@ -38,16 +38,27 @@ static ssize_t dev_write(struct file *file, const char __user* ubuf, size_t coun
 {
 	printk(KERN_NOTICE "dev: write()\n");
 
+	char dig[10] = {0};
+	int d_count = 0;
+
 	char c;
 	size_t i;
 
 	for (i = 0; i < count; i++)
 	{
-		if(copy_from_user(&c, ubuf + i, 1)!=0)
+		if (copy_from_user(&c, ubuf + i, 1) != 0)
 		{
 			return -EFAULT;
 		}
-		printk(KERN_NOTICE "dev: symbol is %d", c);
+		else
+		{
+			if ("0" < c && c < "9")
+			{
+				dig[d_count++] = c;
+				printk(KERN_NOTICE "dev write: digit: %d", c);
+			}
+		}
+
 	}
 
 	return count;
@@ -70,7 +81,7 @@ static int dev_close(struct inode *i, struct file *f)
 	return 0;
 }
 
-static struct file_operations char_dev_fops = 
+static struct file_operations char_dev_fops =
 {
 	.owner = THIS_MODULE,
 	.open = dev_open,
@@ -79,49 +90,49 @@ static struct file_operations char_dev_fops =
 	.write = dev_write
 };
 
-static struct file_operations fops = 
+static struct file_operations fops =
 {
 	.owner = THIS_MODULE,
 	.read = proc_read,
 	.write = proc_write
 };
 
-static int __init lab1_init(void){
+static int __init lab1_init(void) {
 	entry = proc_create("var3", 0444, NULL, &fops);
 
-    if (alloc_chrdev_region(&first, 0, 1, "ch_dev") < 0)
-	  {
+	if (alloc_chrdev_region(&first, 0, 1, "ch_dev") < 0)
+	{
 		return -1;
-	  }
-    if ((cl = class_create(THIS_MODULE, "chardrv")) == NULL)
-	  {
+	}
+	if ((cl = class_create(THIS_MODULE, "chardrv")) == NULL)
+	{
 		unregister_chrdev_region(first, 1);
 		return -1;
-	  }
-    if (device_create(cl, NULL, first, NULL, "var3") == NULL)
-	  {
+	}
+	if (device_create(cl, NULL, first, NULL, "var3") == NULL)
+	{
 		class_destroy(cl);
 		unregister_chrdev_region(first, 1);
 		return -1;
-	  }
-    cdev_init(&c_dev, &char_dev_fops);
-    if (cdev_add(&c_dev, first, 1) == -1)
-	  {
+	}
+	cdev_init(&c_dev, &char_dev_fops);
+	if (cdev_add(&c_dev, first, 1) == -1)
+	{
 		device_destroy(cl, first);
 		class_destroy(cl);
 		unregister_chrdev_region(first, 1);
 		return -1;
-	  }
-    printk("Hey, laba\n");
+	}
+	printk("Hey, laba\n");
 	return 0;
 }
 
-static void __exit lab1_exit(void){
+static void __exit lab1_exit(void) {
 	cdev_del(&c_dev);
-    device_destroy(cl, first);
-    class_destroy(cl);
-    unregister_chrdev_region(first, 1);
-    proc_remove(entry);
+	device_destroy(cl, first);
+	class_destroy(cl);
+	unregister_chrdev_region(first, 1);
+	proc_remove(entry);
 	printk(KERN_NOTICE "Bye, laba\n");
 }
 
