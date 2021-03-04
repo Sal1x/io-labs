@@ -21,6 +21,9 @@ MODULE_AUTHOR("Alexander Verbovoy, Malcev Andrei");
 MODULE_DESCRIPTION("Lab1 var3");
 MODULE_VERSION("0.0.1");
 
+static int sum = 0;
+static int sum_count = 0;
+static int MAX_SIZE = 1024;
 
 static ssize_t proc_write(struct file* file, const char __user* ubuf, size_t count, loff_t* ppos)
 {
@@ -31,7 +34,29 @@ static ssize_t proc_write(struct file* file, const char __user* ubuf, size_t cou
 static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, loff_t* ppos)
 {
 	printk(KERN_NOTICE "proc: read()");
-	return -1;
+
+	char* local_buf = (char*) kmalloc(sizeof(char) * max_size, GFP_KERNEL);
+
+	size_t len = 0;
+	size_t i = 0;
+
+	printk(KERN_NOTICE "sum_count = %d", sum_count);
+
+	for ( i = 0; i < sum_count; i++)
+		len += sprintf(local_buf + len, "%d\n", history[i]);
+
+	if (*ppos > 0 || count < len)
+	{
+		return 0;
+	}
+	if (copy_to_user(ubuf, local_buf, len) != 0)
+	{
+		return -EFAULT;
+	}
+	*ppos = len;
+
+	kfree(local_buf);
+	return len;
 }
 
 static ssize_t dev_write(struct file *file, const char __user* ubuf, size_t count, loff_t* ppos)
@@ -40,6 +65,7 @@ static ssize_t dev_write(struct file *file, const char __user* ubuf, size_t coun
 
 	char dig[10] = {0};
 	int d_count = 0;
+	int num = 0;
 
 	char c;
 	size_t i;
@@ -52,22 +78,60 @@ static ssize_t dev_write(struct file *file, const char __user* ubuf, size_t coun
 		}
 		else
 		{
-			if ("0" < c && c < "9")
+			if (c >= '0' && c <= '9')
 			{
 				dig[d_count++] = c;
-				printk(KERN_NOTICE "dev write: digit: %d", c);
+				printk(KERN_NOTICE "dev write: digit: %c", c);
+			}
+			else
+			{
+				if (d_count > 0)
+				{
+					kstrtoint(dig, 10, &num);
+					memset(dig, 0, 10);
+					d_count = 0;
+
+					sum += num;
+				}
 			}
 		}
 
-	}
+	} //for
 
+	history[sum_count++] = sum;
+
+	printk(KERN_NOTICE "dev: sum = %d\n", sum);
 	return count;
 }
 
 static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff_t* ppos)
 {
 	printk(KERN_NOTICE "dev: read()\n");
-	return count;
+
+	size_t len = strlen(THIS_MODULE->name);
+ 
+	char* local_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
+ 
+	size_t llen = 0;
+	size_t i = 0;
+
+	printk(KERN_NOTICE "sum_count = %d", sum_count);
+ 
+	for (; i < sum_count; i++)
+		llen += sprintf(local_buf + llen,"%d\n", history[i]);
+ 
+	if (*ppos > 0 || count < len)
+	{
+		return 0;
+	}
+	if (copy_to_user(ubuf, THIS_MODULE->name, len) != 0)
+	{
+		return -EFAULT;
+	}
+	*ppos = len;
+
+	kfree(local_buf);
+	return len;
 }
 static int dev_open(struct inode *i, struct file *f)
 {
@@ -117,8 +181,8 @@ static int __init lab1_init(void) {
 		unregister_chrdev_region(first, 1);
 		return -1;
 	}
-	
-	cl-> devnode = set_devnode;
+
+	cl->devnode = set_devnode;
 
 	if (device_create(cl, NULL, first, NULL, "var3") == NULL)
 	{
@@ -134,7 +198,7 @@ static int __init lab1_init(void) {
 		unregister_chrdev_region(first, 1);
 		return -1;
 	}
-	printk("Hey, laba\n");
+	printk(KERN_NOTICE "Hey, laba\n");
 	return 0;
 }
 
