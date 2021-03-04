@@ -97,6 +97,14 @@ static struct file_operations fops =
 	.write = proc_write
 };
 
+// chmod 666 for /dev/var3
+static char* set_devnode(struct device* dev, umode_t* mode)
+{
+	if (mode != NULL)
+		*mode = 0666;
+	return NULL;
+}
+
 static int __init lab1_init(void) {
 	entry = proc_create("var3", 0444, NULL, &fops);
 
@@ -109,6 +117,9 @@ static int __init lab1_init(void) {
 		unregister_chrdev_region(first, 1);
 		return -1;
 	}
+	
+	cl-> devnode = set_devnode;
+
 	if (device_create(cl, NULL, first, NULL, "var3") == NULL)
 	{
 		class_destroy(cl);
