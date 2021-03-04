@@ -117,6 +117,9 @@ static int __init lab1_init(void) {
 		unregister_chrdev_region(first, 1);
 		return -1;
 	}
+	
+	cl-> devnode = set_devnode;
+
 	if (device_create(cl, NULL, first, NULL, "var3") == NULL)
 	{
 		class_destroy(cl);
