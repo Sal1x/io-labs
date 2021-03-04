@@ -97,6 +97,14 @@ static struct file_operations fops =
 	.write = proc_write
 };
 
+// chmod 666 for /dev/var3
+static char* set_devnode(struct device* dev, umode_t* mode)
+{
+	if (mode != NULL)
+		*mode = 0666;
+	return NULL;
+}
+
 static int __init lab1_init(void) {
 	entry = proc_create("var3", 0444, NULL, &fops);
 
