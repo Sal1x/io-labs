@@ -125,11 +125,11 @@ static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff
 	{
 		return 0;
 	}
-	if (copy_to_user(ubuf, THIS_MODULE->name, len) != 0)
+	if (copy_to_user(ubuf, THIS_MODULE->name, len) != 0) // todo change this 
 	{
 		return -EFAULT;
 	}
-	*ppos = len;
+	*ppos += len;
 
 	kfree(local_buf);
 	return len;
