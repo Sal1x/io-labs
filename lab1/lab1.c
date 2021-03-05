@@ -42,8 +42,6 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
 	size_t len = 0;
 	size_t i = 0;
 
-	printk(KERN_NOTICE "sum_count = %d", sum_count);
-
 	for ( i = 0; i < sum_count; i++)
 		len += sprintf(local_buf + len, "%d\n", history[i]);
 
@@ -83,7 +81,6 @@ static ssize_t dev_write(struct file *file, const char __user* ubuf, size_t coun
 			if (c >= '0' && c <= '9')
 			{
 				dig[d_count++] = c;
-				printk(KERN_NOTICE "dev write: digit: %c", c);
 			}
 			else
 			{
@@ -118,8 +115,6 @@ static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff
  
 	size_t llen = 0;
 	size_t i = 0;
-
-	printk(KERN_NOTICE "sum_count = %d", sum_count);
  
 	for (i = 0; i < sum_count; i++)
 		llen += sprintf(local_buf + llen,"%d\n", history[i]);
