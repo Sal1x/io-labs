@@ -121,8 +121,10 @@ static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff
 
 	printk(KERN_NOTICE "sum_count = %d", sum_count);
  
-	for (; i < sum_count; i++)
+	for (i = 0; i < sum_count; i++)
 		llen += sprintf(local_buf + llen,"%d\n", history[i]);
+
+	printk(KERN_NOTICE "%s", local_buf);
  
 	if (*ppos > 0 || count < len)
 	{
