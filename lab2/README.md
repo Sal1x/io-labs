@@ -36,10 +36,10 @@ Partition Table: msdos
 Disk Flags: 
 
 Number  Start    End      Size     Type      File system  Flags
- 1      0.00MiB  30.0MiB  30.0MiB  primary   ext4
+ 1      0.00MiB  30.0MiB  30.0MiB  primary   
  2      30.0MiB  50.0MiB  20.0MiB  extended               lba
- 5      30.0MiB  40.0MiB  10.0MiB  logical   ext4
- 6      40.0MiB  50.0MiB  10.0MiB  logical   ext4
+ 5      30.0MiB  40.0MiB  10.0MiB  logical   
+ 6      40.0MiB  50.0MiB  10.0MiB  logical   
 ```
 
 ### Форматирование разделов диска с помощью утилиты mkfs.vfat
