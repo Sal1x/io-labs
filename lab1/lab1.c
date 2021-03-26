@@ -137,7 +137,7 @@ static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff
 	*ppos += len;
 
 	kfree(local_buf);
-	kfree(print_buf)
+	kfree(print_buf);
 	return len;
 }
 static int dev_open(struct inode *i, struct file *f)
