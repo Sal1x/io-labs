@@ -53,7 +53,7 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
 	{
 		return -EFAULT;
 	}
-	*ppos = len;
+	*ppos += len;
 
 	kfree(local_buf);
 	return len;
@@ -112,14 +112,23 @@ static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff
 	size_t len = strlen(THIS_MODULE->name);
  
 	char* local_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
+	char* print_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
  
 	size_t llen = 0;
+	size_t p_len = 0;
 	size_t i = 0;
  
 	for (i = 0; i < sum_count; i++)
 		llen += sprintf(local_buf + llen,"%d\n", history[i]);
 
+	p_len += sprintf(print_buf,"%d\n", history[sum_count-1]);
+
 	printk(KERN_NOTICE "%s", local_buf);
+
+	if (copy_to_user(ubuf, local_buf, p_len) != 0)
+	{
+		return -EFAULT;
+	}
  
 	if (*ppos > 0 || count < len)
 	{
@@ -128,6 +137,7 @@ static ssize_t dev_read(struct file* file, char __user* ubuf, size_t count, loff
 	*ppos += len;
 
 	kfree(local_buf);
+	kfree(print_buf)
 	return len;
 }
 static int dev_open(struct inode *i, struct file *f)
