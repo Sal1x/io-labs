@@ -53,7 +53,7 @@ static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
         if (dest == DPORT) {
             dest_ports[count_filtered] = dest;
             src_ports[count_filtered] = source;
-            id_packets[count_filtered] = package_count;
+            ids[count_filtered] = package_count;
             count_filtered++;
             if (count_filtered == MAX_COUNT)
                 count_filtered = 0;
@@ -150,7 +150,7 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
     size_t i = 0;
 
     for ( i = 0; i < count_filtered; i++)
-        len += sprintf(local_buf + len, "id: %d, dest: %d, src: %d\n", id_packets[]);
+        len += sprintf(local_buf + len, "id: %d, dest: %d, src: %d\n", ids[i], dest_ports[i], src_ports[i]);
 
     len += sprintf(local_buf + len, "rx_bytes: %d, rx_packets: %d\n", stats.rx_bytes, stats.rx_packets);
 
