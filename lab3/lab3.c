@@ -170,16 +170,9 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
     return len;
 }
 
-
-static ssize_t proc_write(struct file *file, const char __user * ubuf, size_t count, loff_t* ppos) {
-    printk(KERN_DEBUG "%s: Attempt to write proc file", THIS_MODULE->name);
-    return -1;
-}
-
 static struct file_operations proc_fops = {
     .owner = THIS_MODULE,
     .read = proc_read,
-    .write = proc_write,
 };
 
 int __init vni_init(void) 
