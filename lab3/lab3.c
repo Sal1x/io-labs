@@ -149,29 +149,27 @@ static void setup(struct net_device *dev) {
         dev->dev_addr[i] = (char)i;
 }
 
-static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, loff_t* ppos) {
-    print("READ count %d", count);
+static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, loff_t* ppos)
+{
 
-    char* local_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
-
+    char* buf = (char*) kmalloc(sizeof(char) * 256, GFP_KERNEL);
     size_t len = 0;
-    size_t i = 0;
 
-    len += sprintf(local_buf + len, "rx_bytes: %d, rx_packets: %d\n", stats.rx_bytes, stats.rx_packets);
-    printk("READ len %", len);
-    // local_buf[len++] = '\0';
+    len += sprintf(buf + len, "Recieved packets: %lu (%lu bytes)\n", stats.rx_packets, stats.rx_bytes);
+    len += sprintf(buf + len, "Filtered packets: %u\n", count_passed);
 
+    printk(KERN_DEBUG "Attempt to read proc file");
     if (*ppos > 0 || count < len)
         return 0;
 
-    if (copy_to_user(ubuf, local_buf, len) != 0)
+    if (copy_to_user(ubuf, buf, len) != 0)
         return -EFAULT;
 
     *ppos = len;
-
-    kfree(local_buf);
+    kfree(buf);
     return len;
 }
+
 
 static ssize_t proc_write(struct file *file, const char __user * ubuf, size_t count, loff_t* ppos) {
     printk(KERN_DEBUG "%s: Attempt to write proc file", THIS_MODULE->name);
