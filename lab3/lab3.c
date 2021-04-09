@@ -28,12 +28,13 @@ struct priv {
 };
 
 #define MAX_COUNT 500
+#define MAX_SIZE MAX_COUNT * 2
 #define DPORT 1861
 
 static int dest_ports[MAX_COUNT];
 static int src_ports[MAX_COUNT];
 static int ids[MAX_COUNT];
-static int count_filtered = 0;
+static int count_passed = 0;
 
 static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
     unsigned char *user_data_ptr = NULL;
@@ -41,7 +42,7 @@ static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
     struct udphdr* udp = NULL;
     int data_len = 0;
 
-    int source = 0, dest = 0;
+    int source = dest = 0;
     int return_code = 0;
     package_count++;
 
@@ -51,12 +52,12 @@ static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
         dest = ntohs(udp->dest);
         printk("src_addr: %d, dest_addr: %d\n", source, dest);
         if (dest == DPORT) {
-            dest_ports[count_filtered] = dest;
-            src_ports[count_filtered] = source;
-            ids[count_filtered] = package_count;
-            count_filtered++;
-            if (count_filtered == MAX_COUNT)
-                count_filtered = 0;
+            dest_ports[count_passed] = dest;
+            src_ports[count_passed] = source;
+            ids[count_passed] = package_count;
+            count_passed++;
+            if (count_passed == MAX_COUNT)
+                count_passed = 0;
             return_code = 1;
         }
         data_len = ntohs(udp->len) - sizeof(struct udphdr);
@@ -72,7 +73,7 @@ static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
                (ntohl(ip->daddr) >> 8) & 0x0000FF, (ntohl(ip->daddr)) & 0x000000FF);
 
         printk(KERN_INFO "Data length: %d. Data:", data_len);
-        printk("%s", data);
+        printk("%s\n", data);
         return return_code;
 
     }
@@ -144,12 +145,12 @@ static void setup(struct net_device *dev) {
 }
 
 static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, loff_t* ppos) {
-    char* local_buf = (char*) kmalloc(sizeof(char) * MAX_COUNT, GFP_KERNEL);
+    char* local_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
 
     size_t len = 0;
     size_t i = 0;
 
-    for ( i = 0; i < count_filtered; i++)
+    for ( i = 0; i < count_passed; i++)
         len += sprintf(local_buf + len, "id: %d, dest: %d, src: %d\n", ids[i], dest_ports[i], src_ports[i]);
 
     len += sprintf(local_buf + len, "rx_bytes: %d, rx_packets: %d\n", stats.rx_bytes, stats.rx_packets);
@@ -157,13 +158,11 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
     local_buf[len++] = '\0';
 
     if (*ppos > 0 || count < len)
-    {
         return 0;
-    }
+
     if (copy_to_user(ubuf, local_buf, len) != 0)
-    {
         return -EFAULT;
-    }
+
     *ppos += len;
 
     kfree(local_buf);
