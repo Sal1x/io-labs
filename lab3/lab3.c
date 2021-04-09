@@ -18,7 +18,7 @@ static char* link = "enp0s5";
 module_param(link, charp, 0);
 
 static int d_port = 1861;
-moduleparam(d_port, int, 0);
+module_param(d_port, int, 0);
 
 static char* ifname = "vni%d";
 static unsigned char data[1500];
@@ -52,7 +52,6 @@ static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
         udp = (struct udphdr*)((unsigned char*)ip + (ip->ihl * 4));
         int source = ntohs(udp->source);
         int dest = ntohs(udp->dest);
-
         if (dest == d_port) {
             printk("src port: %d, dest port: %d\n", source, dest);
 
@@ -83,7 +82,7 @@ static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
         return ret;
 
     }
-    return return_code;
+    return ret;
 }
 
 static rx_handler_result_t handle_frame(struct sk_buff **pskb) {
@@ -151,17 +150,16 @@ static void setup(struct net_device *dev) {
 }
 
 static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, loff_t* ppos) {
+    print("READ count %d", count);
+
     char* local_buf = (char*) kmalloc(sizeof(char) * MAX_SIZE, GFP_KERNEL);
 
     size_t len = 0;
     size_t i = 0;
 
-    for ( i = 0; i < count_passed; i++)
-        len += sprintf(local_buf + len, "id: %d, dest: %d, src: %d\n", ids[i], dest_ports[i], src_ports[i]);
-
     len += sprintf(local_buf + len, "rx_bytes: %d, rx_packets: %d\n", stats.rx_bytes, stats.rx_packets);
-
-    local_buf[len++] = '\0';
+    printk("READ len %", len);
+    // local_buf[len++] = '\0';
 
     if (*ppos > 0 || count < len)
         return 0;
@@ -169,7 +167,7 @@ static ssize_t proc_read(struct file* file, char __user* ubuf, size_t count, lof
     if (copy_to_user(ubuf, local_buf, len) != 0)
         return -EFAULT;
 
-    *ppos += len;
+    *ppos = len;
 
     kfree(local_buf);
     return len;
