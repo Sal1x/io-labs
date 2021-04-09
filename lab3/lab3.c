@@ -17,6 +17,9 @@ static int package_count = 0;
 static char* link = "enp0s5";
 module_param(link, charp, 0);
 
+static int d_port = 1861;
+moduleparam(d_port, int, 0);
+
 static char* ifname = "vni%d";
 static unsigned char data[1500];
 
@@ -29,7 +32,6 @@ struct priv {
 
 #define MAX_COUNT 500
 #define MAX_SIZE MAX_COUNT * 2
-#define DPORT 1861
 
 static int dest_ports[MAX_COUNT];
 static int src_ports[MAX_COUNT];
@@ -37,44 +39,48 @@ static int ids[MAX_COUNT];
 static int count_passed = 0;
 
 static char check_frame(struct sk_buff* skb, unsigned char data_shift) {
+    int ret = 0;
     unsigned char *user_data_ptr = NULL;
     struct iphdr *ip = (struct iphdr *)skb_network_header(skb);
     struct udphdr* udp = NULL;
     int data_len = 0;
 
-    int source = dest = 0;
-    int return_code = 0;
     package_count++;
 
     if (IPPROTO_UDP == ip->protocol) {
+
         udp = (struct udphdr*)((unsigned char*)ip + (ip->ihl * 4));
-        source = ntohs(udp->source);
-        dest = ntohs(udp->dest);
-        printk("src_addr: %d, dest_addr: %d\n", source, dest);
-        if (dest == DPORT) {
+        int source = ntohs(udp->source);
+        int dest = ntohs(udp->dest);
+
+        if (dest == d_port) {
+            printk("src port: %d, dest port: %d\n", source, dest);
+
             dest_ports[count_passed] = dest;
             src_ports[count_passed] = source;
             ids[count_passed] = package_count;
+
             count_passed++;
             if (count_passed == MAX_COUNT)
                 count_passed = 0;
-            return_code = 1;
+            ret = 1;
+
+            printk("src addr: %d.%d.%d.%d : %d\n",
+                   ntohl(ip->saddr) >> 24, (ntohl(ip->saddr) >> 16) & 0x00FF,
+                   (ntohl(ip->saddr) >> 8) & 0x0000FF, (ntohl(ip->saddr)) & 0x000000FF, source);
+            printk("dest addr: %d.%d.%d.%d : %d\n",
+                   ntohl(ip->daddr) >> 24, (ntohl(ip->daddr) >> 16) & 0x00FF,
+                   (ntohl(ip->daddr) >> 8) & 0x0000FF, (ntohl(ip->daddr)) & 0x000000FF, dest);
+
+            data_len = ntohs(udp->len) - sizeof(struct udphdr);
+            user_data_ptr = (unsigned char *)(skb->data + sizeof(struct iphdr)  + sizeof(struct udphdr)) + data_shift;
+            memcpy(data, user_data_ptr, data_len);
+            data[data_len] = '\0';
+
+            printk(KERN_INFO "Data length: %d. Data:", data_len);
+            printk("%s\n", data);
         }
-        data_len = ntohs(udp->len) - sizeof(struct udphdr);
-        user_data_ptr = (unsigned char *)(skb->data + sizeof(struct iphdr)  + sizeof(struct udphdr)) + data_shift;
-        memcpy(data, user_data_ptr, data_len);
-        data[data_len] = '\0';
-
-        printk("Captured UDP datagram, saddr: %d.%d.%d.%d\n",
-               ntohl(ip->saddr) >> 24, (ntohl(ip->saddr) >> 16) & 0x00FF,
-               (ntohl(ip->saddr) >> 8) & 0x0000FF, (ntohl(ip->saddr)) & 0x000000FF);
-        printk("daddr: %d.%d.%d.%d\n",
-               ntohl(ip->daddr) >> 24, (ntohl(ip->daddr) >> 16) & 0x00FF,
-               (ntohl(ip->daddr) >> 8) & 0x0000FF, (ntohl(ip->daddr)) & 0x000000FF);
-
-        printk(KERN_INFO "Data length: %d. Data:", data_len);
-        printk("%s\n", data);
-        return return_code;
+        return ret;
 
     }
     return return_code;
