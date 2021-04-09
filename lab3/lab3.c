@@ -182,39 +182,47 @@ static struct file_operations proc_fops = {
     .write = proc_write,
 };
 
-int __init vni_init(void) {
-    entry = proc_create(THIS_MODULE->name, 0660, NULL, &proc_fops);
-    printk(KERN_INFO "%s: proc file has been created\n", THIS_MODULE->name);
-
+int __init vni_init(void) 
+{
     int err = 0;
-    struct priv *priv;
+    struct priv* priv;
+
+    entry = proc_create(THIS_MODULE->name, 0666, NULL, &proc_fops);
+    printk(KERN_INFO "%s: proc file is created\n", THIS_MODULE->name);
+
     child = alloc_netdev(sizeof(struct priv), ifname, NET_NAME_UNKNOWN, setup);
-    if (child == NULL) {
+    if (child == NULL) 
+    {
         printk(KERN_ERR "%s: allocate error", THIS_MODULE->name);
         return -ENOMEM;
     }
+
     priv = netdev_priv(child);
     priv->parent = __dev_get_by_name(&init_net, link); //parent interface
-    if (!priv->parent) {
+    if (!priv->parent) 
+    {
         printk(KERN_ERR "%s: no such net: %s", THIS_MODULE->name, link);
         free_netdev(child);
         return -ENODEV;
     }
-    if (priv->parent->type != ARPHRD_ETHER && priv->parent->type != ARPHRD_LOOPBACK) {
-        printk(KERN_ERR "%s: illegal net type", THIS_MODULE->name);
+
+    if (priv->parent->type != ARPHRD_ETHER && priv->parent->type != ARPHRD_LOOPBACK) 
+    {
+        printk(KERN_ERR "%s: illegal net type", THIS_MODULE->name); 
         free_netdev(child);
         return -EINVAL;
     }
-
+ 
     //copy IP, MAC and other information
     memcpy(child->dev_addr, priv->parent->dev_addr, ETH_ALEN);
     memcpy(child->broadcast, priv->parent->broadcast, ETH_ALEN);
-    if ((err = dev_alloc_name(child, child->name))) {
+    if ((err = dev_alloc_name(child, child->name))) 
+    {
         printk(KERN_ERR "%s: allocate name, error %i", THIS_MODULE->name, err);
         free_netdev(child);
         return -EIO;
     }
-
+ 
     register_netdev(child);
     rtnl_lock();
     netdev_rx_handler_register(priv->parent, &handle_frame, NULL);
@@ -222,27 +230,24 @@ int __init vni_init(void) {
     printk(KERN_INFO "Module %s loaded", THIS_MODULE->name);
     printk(KERN_INFO "%s: create link %s", THIS_MODULE->name, child->name);
     printk(KERN_INFO "%s: registered rx handler for %s", THIS_MODULE->name, priv->parent->name);
-    return 0;
+    return 0; 
 }
-
-void __exit vni_exit(void) {
-
-    // proc
-    proc_remove(entry);
-    printk(KERN_INFO "%s: proc file is deleted\n", THIS_MODULE->name);
-
-
-    struct priv *priv = netdev_priv(child);
+ 
+void __exit vni_exit(void) 
+{
+    struct priv* priv = netdev_priv(child);
     if (priv->parent) {
         rtnl_lock();
         netdev_rx_handler_unregister(priv->parent);
         rtnl_unlock();
         printk(KERN_INFO "%s: unregister rx handler for %s", THIS_MODULE->name, priv->parent->name);
     }
+
+    proc_remove(entry);
     unregister_netdev(child);
     free_netdev(child);
-    printk(KERN_INFO "Module %s unloaded", THIS_MODULE->name);
-}
+    printk(KERN_INFO "Module %s unloaded", THIS_MODULE->name); 
+} 
 
 module_init(vni_init);
 module_exit(vni_exit);
